@@ -21,6 +21,8 @@ invisible(lapply(packages, library, character.only = TRUE))
 src_dir <- ''              #!!!CHANGE THIS
 dest_dir <- ''             #!!!CHANGE THIS
 dest_file_name <- paste('INRG_analytical_file.csv')
+dest_file_name_labeled <- paste('INRG_analytical_file_labels.csv')
+
   
 ##################################################################
 # READ FILES FROM SOURCE DIRECTORY INTO DATA FRAMES
@@ -97,10 +99,6 @@ tumor_assessment <- join_timing(tumor_assessment)
 # Join Person and Subject files using 'person.submitter_id' = 'subject.persons.submitter'
 person_subject <- left_join(person, subject, by = c('submitter_id' = 'persons.submitter_id'), suffix = c('_person', '_subject')) %>% 
   select(c('consortium', 'data_contributor_id', 'submitter_id', 'submitter_id_subject', 'honest_broker_subject_id', 'sex', 'race', 'ethnicity', 'censor_status', 'age_at_censor_status'))
-
-###
-### ADDED
-###
 
 # Left join with disease_characteristic
 person_subject <- left_join(person_subject, disease_characteristic %>% select(subjects.submitter_id, mki, initial_treatment_category), by = c('submitter_id_subject' = 'subjects.submitter_id'))
@@ -186,7 +184,7 @@ pvt_smn <- secondary_malignant_neoplasm %>%
 labs_cols_to_rename <- c("ferritin"="Ferritin", "ldh"="LDH")
 pvt_labs <- pvt_labs %>% rename(any_of(labs_cols_to_rename))
 
-molecular_analysis_cols_to_rename <- c("_17Q_GAIN"="17q gain", "mycn"="MYCN Amplification", "_1P_LOAB"="1p deletion", "_11Q_UBAB"="11q deletion")
+molecular_analysis_cols_to_rename <- c("17Q_GAIN"="17q gain", "mycn"="MYCN Amplification", "1P_LOAB"="1p deletion", "11Q_UBAB"="11q deletion")
 pvt_molecular_analysis <- pvt_molecular_analysis %>% rename(any_of(molecular_analysis_cols_to_rename))
 
 study_cols_to_rename <- c("init_trial" = "study_id")
@@ -234,18 +232,198 @@ analytic_data_set$stime <-  analytic_data_set$age_at_lkss - analytic_data_set$ag
 analytic_data_set$efstime <-  analytic_data_set$age_at_censor_status - analytic_data_set$age
 analytic_data_set$second_malig_time <-  analytic_data_set$age_at_smn - analytic_data_set$age
 
-analytic_data_set <- analytic_data_set %>% 
-  select(data_contributor_id, pt_id=honest_broker_subject_id, age, year, init_treat, 
-         pri_adre, pri_abdret, pri_neck, pri_thor, pri_pelv, pri_oth, inss_stage, ev_stg, 
-         mycn, ploidy, ferritin, ldh, hist, diag, grade, mki, 
-         met_bm, met_bone, met_dln, met_liv, met_skin, met_lung, met_cns, met_oth, 
-         efscens, efstime, scens, stime, gender, race, ethnicity, `_11Q_UBAB`, `_1P_LOAB`, `_17Q_GAIN`, init_trial, inrg_stage,
-         second_malig_cens, second_malig_time, smn_morph_icdo, smn_morph_sno, smn_morph_txt, smn_top_icdo, smn_top_sno, smn_top_txt)
+#create a copy of the analytic data set. we'll have one set with labels and one set with codes
+analytic_data_set_labeled <- analytic_data_set
+
+##################################################################
+# RECODE LABELS AS VALUES
+##################################################################
+
+analytic_data_set$gender <- 
+  analytic_data_set$gender %>% 
+  as.character() %>%
+  case_match("Male" ~ 1, 
+             "Female" ~ 2, 
+             "Unknown" ~ 9,
+             .default = NA)
+
+analytic_data_set$race <- 
+  analytic_data_set$race %>% 
+  as.character() %>% 
+  case_match("White" ~ 1, 
+             "Black or African American" ~ 2,
+             "American Indian or Alaskan Native" ~ 3,
+             "Asian" ~ 4,
+             "Native Hawaiian or Other Pacific Islander" ~ 5,
+             "Not reported" ~ 98,
+             "Unknown" ~ 99,
+             .default = NA)
+
+analytic_data_set$ethnicity <- 
+  analytic_data_set$ethnicity %>% 
+  as.character() %>% 
+  case_match("Not Hispanic or Latino" ~ 0,
+             "Hispanic or Latino" ~ 1,
+             "Unknown" ~ 2,
+             .default = NA)
+
+analytic_data_set$mki <- 
+  analytic_data_set$mki %>% 
+  as.character() %>% 
+  case_match("Low (<2% or <100/5,000 cells)" ~ 1,
+             "Intermediate (2-4% or 100-200/5,000 cells)" ~ 2,
+             "High (>4% or >200/5,000 cells)" ~ 3,
+             "Unknown" ~ 9,
+             .default = NA)
+
+analytic_data_set$diag <- 
+  analytic_data_set$diag %>% 
+  as.character() %>% 
+  case_match("Neuroblastoma (Schwannian Stroma-Poor)" ~ 1,
+             "Ganglioneuroblastoma, intermixed (Schwannian Stroma-Rich)" ~ 2,
+             "Ganglioneuroma (Schwannian Stroma-Dominant), Maturing Subtype" ~ 3,
+             "Ganglioneuroblastoma, Nodular (Composite)" ~ 4,
+             "Unknown" ~ 9,
+             .default = NA)
+
+analytic_data_set$grade <- 
+  analytic_data_set$grade %>% 
+  as.character() %>% 
+  case_match("Undifferentiated or Poorly Differentiated" ~ 0, 
+             "Differentiating" ~ 1, 
+             "Unknown" ~ 9,
+             .default = NA)
+
+analytic_data_set$hist <- 
+  analytic_data_set$hist %>% 
+  as.character() %>% 
+  case_match("Favorable" ~ 0, 
+             "Unfavorable" ~ 1, 
+             "Unknown" ~ 9,
+             .default = NA)
+
+analytic_data_set$inss_stage <- 
+  analytic_data_set$inss_stage %>% 
+  as.character() %>% 
+  case_match("Stage 1" ~ 1, 
+             "Stage 2a" ~ 2, 
+             "Stage 2b" ~ 3, 
+             "Stage 3" ~ 4, 
+             "Stage 4" ~ 5, 
+             "Stage 4s" ~ 6, 
+             "Unknown" ~ 9,
+             .default = NA)
+
+analytic_data_set$inrg_stage <- 
+  analytic_data_set$inrg_stage %>% 
+  as.character() %>% 
+  case_match("Stage L1" ~ 1, 
+             "Stage L2" ~ 2, 
+             "Stage M" ~ 3, 
+             "Stage MS" ~ 4, 
+             "Unknown" ~ 9,
+             .default = NA)
+
+analytic_data_set$ev_stg <- 
+  analytic_data_set$ev_stg %>% 
+  as.character() %>% 
+  case_match("Stage I" ~ 1, 
+             "Stage II" ~ 2, 
+             "Stage III" ~ 3, 
+             "Stage IV" ~ 4, 
+             "Stage IVs" ~ 5, 
+             "Unknown" ~ 9,
+             .default = NA)
+
+analytic_data_set <- 
+  analytic_data_set %>% 
+  mutate_at(
+    dplyr::vars(starts_with('pri_')), 
+    funs(case_when(.=="Absent" ~ 0, 
+                   .=="Present" ~ 1, 
+                   .=="Unknown" ~ 9))
+  )
+
+analytic_data_set <- 
+  analytic_data_set %>% 
+  mutate_at(
+    dplyr::vars(starts_with('met_')), 
+    funs(case_when(.=="Absent" ~ 0, 
+                   .=="Present" ~ 1, 
+                   .=="Unknown" ~ 9))
+  )
+
+analytic_data_set <- 
+  analytic_data_set %>% 
+  mutate_at(
+    dplyr::vars(one_of('11Q_UBAB','1P_LOAB','17Q_GAIN','mycn')), 
+    funs(case_when(.=="Absent" ~ 0, 
+                   .=="Present" ~ 1, 
+                   .=="Unknown" ~ 9))
+  )
+
+
+analytic_data_set$ploidy <- 
+  analytic_data_set$ploidy %>% 
+  as.character() %>% 
+  case_match("DNA Index <= 1 (Hypodiploid, Diploid)" ~ 1, 
+             "DNA Index > 1 (Hyperdiploid)" ~ 0, 
+             "Unknown" ~ 9,
+             .default = NA)
+    
+analytic_data_set$scens <- 
+  analytic_data_set$scens %>% 
+  as.character() %>% 
+  case_match("Alive" ~ 0, 
+             "Dead" ~ 1, 
+             "Unknown" ~ 9,
+             .default = NA)
+
+    
+analytic_data_set$init_treat <- 
+  analytic_data_set$init_treat %>% 
+  as.character() %>% 
+  case_match("None (observation)" ~ 0, 
+             "Surgery alone" ~ 1, 
+             "Conventional-dose chemotherapy (2-8 cycles) plus surgery" ~ 2, 
+             "Intensive multi-modality therapy: specific type unknown" ~ 3, 
+             "Intensive multi-modality therapy: no stem cell or bone marrow transplant" ~ 4, 
+             "Intensive multi-modality therapy: plus stem cell or bone marrow transplant" ~ 5, 
+             "Intensive multi-modality therapy: plus stem cell or bone marrow transplant and anti-GD2 antibody" ~ 6, 
+             "Unknown" ~ 9,
+             .default = NA)
+
+analytic_data_set$efscens <- 
+  analytic_data_set$efscens %>% 
+  as.character() %>% 
+  case_match("Subject has had one or more events" ~ 0, 
+             "Subject is censored (i.e. has had no event(s))" ~ 1, 
+             "Unknown" ~ 9,
+             .default = NA)
+    
+analytic_data_set$second_malig_cens <- 
+  analytic_data_set$second_malig_cens %>% 
+  as.character() %>% 
+  case_match("No" ~ 0, 
+             "Yes" ~ 1, 
+             "Unknown" ~ 9,
+             .default = NA)
+
+output_cols <- c('data_contributor_id', 'pt_id'='honest_broker_subject_id', 'age', 'year', 'init_treat', 
+                 'pri_adre', 'pri_abdret', 'pri_neck', 'pri_thor', 'pri_pelv', 'pri_oth', 'inss_stage', 'ev_stg', 
+                 'mycn', 'ploidy', 'ferritin', 'ldh', 'hist', 'diag', 'grade', 'mki', 
+                 'met_bm', 'met_bone', 'met_dln', 'met_liv', 'met_skin', 'met_lung', 'met_cns', 'met_oth', 
+                 'efscens', 'efstime', 'scens', 'stime', 'gender', 'race', 'ethnicity', '11Q_UBAB', '1P_LOAB', '17Q_GAIN', 'init_trial', 'inrg_stage', 
+                 'second_malig_cens', 'second_malig_time', 'smn_morph_icdo', 'smn_morph_sno', 'smn_morph_txt', 'smn_top_icdo', 'smn_top_sno', 'smn_top_txt')
+
+analytic_data_set <- analytic_data_set %>% select(output_cols)
+analytic_data_set_labeled <- analytic_data_set_labeled %>% select(output_cols)
 
 ##################################################################
 # OUTPUT ANALYTIC DATA SET AS CSV FILE
 ##################################################################
 write_csv(analytic_data_set, file = paste(dest_dir, dest_file_name, sep = ''), na='')
+write_csv(analytic_data_set_labeled, file = paste(dest_dir, dest_file_name_labeled, sep = ''), na='')
 
 ##################################################################
 # CLEANUP ENVIRONMENT

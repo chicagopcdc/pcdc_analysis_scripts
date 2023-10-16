@@ -18,12 +18,11 @@ invisible(lapply(packages, library, character.only = TRUE))
 #     SET src_dir to the source directory with PCDC-supplied tsvs (e.g., '/Users/jdoe/Downloads/export_2023-09-19T15_45_33/tsvs/')
 #     SET dst_dir to the destination directory where you would like the analytic file to be written (e.g., '/Users/jdoe/Downloads/export_2023-09-19T15_45_33/analysis/)
 ##################################################################
-src_dir <- ''              #!!!CHANGE THIS
-dest_dir <- ''             #!!!CHANGE THIS
-dest_file_name <- paste('INRG_analytical_file.csv')
+src_dir <- ''                    #!!!CHANGE THIS
+dest_dir <- ''                   #!!!CHANGE THIS
+dest_file_name <- paste('INRG_analytical_file_codes.csv')
 dest_file_name_labeled <- paste('INRG_analytical_file_labels.csv')
 
-  
 ##################################################################
 # READ FILES FROM SOURCE DIRECTORY INTO DATA FRAMES
 ##################################################################
@@ -77,7 +76,6 @@ timing <- timing %>%
 tumor_assessment <- tumor_assessment %>% 
   select(c('type','submitter_id','age_at_tumor_assessment','tumor_classification','tumor_site','tumor_site_other','tumor_state','subjects.submitter_id','timings.submitter_id')) %>% 
   type_convert(col_types='fciffcfcc')
-
 
 ##################################################################
 # JOIN TABLES
@@ -148,10 +146,6 @@ pvt_sites <- tumor_assessment %>%
   select(c('subjects.submitter_id','tumor_classification','tumor_site','tumor_state')) %>%
   pivot_wider(names_from = c(tumor_classification,tumor_site), values_from = tumor_state)
 
-# pvt_survival_characteristic <- survival_characteristic %>%
-#   select(c('subjects.submitter_id','cause_of_death')) %>%
-#   pivot_wider(names_from = cause_of_death, values_from = cause_of_death)
-
 # Filter and select the desired columns
 pvt_timing <- timing %>%
   filter(disease_phase == 'Initial Diagnosis' & disease_phase_number == 1) %>%
@@ -170,13 +164,84 @@ pvt_study <- study %>%
   group_by(subjects.submitter_id) %>% 
   summarise(study_id = str_c(study_id, collapse = ' ;; '))
 
+survival_characteristic$cause_of_death_coded <-
+  survival_characteristic$cause_of_death %>%
+  as.character() %>%
+  case_match("Disease Progression" ~ 0, 
+             "Treatment-Related Mortality" ~ 1, 
+             "Other" ~ 2, 
+             "Unknown" ~ 9, 
+             .default = NA)
+
 pvt_survival_characteristic <- survival_characteristic %>%
-  select(c('subjects.submitter_id','cause_of_death')) %>%
+  select(c('subjects.submitter_id','cause_of_death','cause_of_death_coded')) %>%
   group_by(subjects.submitter_id) %>% 
-  summarise(cause_of_death = str_c(cause_of_death, collapse = ' ;; '))
+  summarise(cause_of_death = str_c(cause_of_death, collapse = ','), cause_of_death_coded = str_c(cause_of_death_coded, collapse = ','))
 
 pvt_smn <- secondary_malignant_neoplasm %>%
   select(c('subjects.submitter_id','smn_yn','age_at_smn','smn_morph_icdo', 'smn_morph_sno', 'smn_morph_txt', 'smn_top_icdo', 'smn_top_sno', 'smn_top_txt'))
+
+##################################################################
+# CREATE AND POPULATE RELAPSE FIELDS (rel_site_gen and relapse_site_specific)
+##################################################################
+#primary
+df_rel_site_primary <- tumor_assessment %>% 
+  filter(disease_phase=='Relapse' & tumor_classification=='Primary' & tumor_state=='Present') %>% 
+  select(subjects.submitter_id, tumor_classification, tumor_site, tumor_state) %>% 
+  mutate('rel_site_primary'="Yes")
+#mets
+df_rel_site_metastatic <- tumor_assessment %>% 
+  filter(disease_phase=='Relapse' & tumor_classification=='Metastatic' & tumor_state=='Present') %>% 
+  select(subjects.submitter_id, tumor_classification, tumor_site, tumor_state) %>% 
+  mutate('rel_site_metastatic'="Yes")
+#unknown
+df_rel_site_unknown <- tumor_assessment %>% 
+  filter(disease_phase=='Relapse' & tumor_classification=='Unknown' & tumor_state=='Unknown') %>% 
+  select(subjects.submitter_id, tumor_classification, tumor_site, tumor_state) %>% 
+  mutate('rel_site_unknown'="Yes")
+
+df_rel_site_all <- bind_rows(df_rel_site_primary, df_rel_site_metastatic, df_rel_site_unknown)
+
+df_rel_site_gen <- left_join(person_subject, df_rel_site_primary,by=c('submitter_id_subject'='subjects.submitter_id')) %>% select('submitter_id_subject', 'rel_site_primary') %>% unique()
+df_rel_site_gen <- left_join(df_rel_site_gen, df_rel_site_metastatic,by=c('submitter_id_subject'='subjects.submitter_id')) %>% select('submitter_id_subject', 'rel_site_primary', 'rel_site_metastatic') %>% unique()
+df_rel_site_gen <- left_join(df_rel_site_gen, df_rel_site_unknown,by=c('submitter_id_subject'='subjects.submitter_id')) %>% select('submitter_id_subject', 'rel_site_primary', 'rel_site_metastatic', 'rel_site_unknown') %>% unique()
+df_rel_site_gen <- df_rel_site_gen %>% mutate(rel_site_gen = NA, rel_site_gen_labeled = NA)
+
+df_rel_site_gen <- df_rel_site_gen %>% mutate(rel_site_gen = rel_site_gen %>% 
+                                    replace(rel_site_primary=='Yes' & rel_site_metastatic=='Yes', 3) %>%
+                                    replace(rel_site_primary=='Yes' & is.na(rel_site_metastatic), 1) %>%
+                                    replace(rel_site_metastatic=='Yes' & is.na(rel_site_primary), 2) %>%
+                                    replace(rel_site_unknown=='Yes', 9)
+                            )
+
+df_rel_site_gen <- df_rel_site_gen %>% mutate(rel_site_gen_labeled = rel_site_gen_labeled %>% 
+                                                replace(rel_site_primary=='Yes' & rel_site_metastatic=='Yes', 'Primary site and metastatic site(s)') %>%
+                                                replace(rel_site_primary=='Yes' & is.na(rel_site_metastatic), 'Primary site only') %>%
+                                                replace(rel_site_metastatic=='Yes' & is.na(rel_site_primary), 'Metastatic site(s) only') %>%
+                                                replace(rel_site_unknown=='Yes', 'Unknown')
+)
+
+df_rel_site_gen <- df_rel_site_gen %>% select('subjects.submitter_id'='submitter_id_subject', 'rel_site_gen', 'rel_site_gen_labeled')
+
+df_rel_site_specific <- df_rel_site_all %>% mutate(relapse_site_specific_coded = NA, relapse_site_specific_labeled=NA)
+df_rel_site_specific <- df_rel_site_specific %>% mutate(relapse_site_specific_coded = (relapse_site_specific_coded %>% 
+                                    replace(tumor_classification=='Primary',1) %>%
+                                    replace(tumor_site=='Bone',2) %>%
+                                    replace(tumor_site=='Bone Marrow',3) %>%
+                                    replace(tumor_site=='Liver',4) %>%
+                                    replace(tumor_site=='Lymph Nodes',5) %>%
+                                    replace(tumor_site=='Lung',6) %>%
+                                    replace(tumor_site=='Other',7) %>%
+                                    replace(tumor_site=='Central Nervous System',8) %>%
+                                    replace(tumor_site=='Unknown',9)))
+
+df_rel_site_specific <- df_rel_site_specific %>% mutate(relapse_site_specific_labeled = ifelse(tumor_classification=='Primary','Primary Site', as.character(tumor_site)))
+
+pvt_rel_site_specific <- df_rel_site_specific %>%
+  select(c('subjects.submitter_id','relapse_site_specific_coded','relapse_site_specific_labeled')) %>%
+  group_by(subjects.submitter_id) %>% 
+  summarise(relapse_site_specific_coded = str_c(relapse_site_specific_coded, collapse = ','),
+            relapse_site_specific_labeled = str_c(relapse_site_specific_labeled, collapse = ','))
 
 ##################################################################
 # RENAME FIELDS
@@ -226,6 +291,8 @@ analytic_data_set <- join_analytic_tables(pvt_survival_characteristic)
 analytic_data_set <- join_analytic_tables(pvt_timing)
 analytic_data_set <- join_analytic_tables(pvt_study)
 analytic_data_set <- join_analytic_tables(pvt_smn)
+analytic_data_set <- join_analytic_tables(df_rel_site_gen)
+analytic_data_set <- join_analytic_tables(pvt_rel_site_specific)
 
 ### calculate time to event from ages
 analytic_data_set$stime <-  analytic_data_set$age_at_lkss - analytic_data_set$age
@@ -238,7 +305,6 @@ analytic_data_set_labeled <- analytic_data_set
 ##################################################################
 # RECODE LABELS AS VALUES
 ##################################################################
-
 analytic_data_set$gender <- 
   analytic_data_set$gender %>% 
   as.character() %>%
@@ -341,8 +407,7 @@ analytic_data_set <-
     dplyr::vars(starts_with('pri_')), 
     funs(case_when(.=="Absent" ~ 0, 
                    .=="Present" ~ 1, 
-                   .=="Unknown" ~ 9))
-  )
+                   .=="Unknown" ~ 9)))
 
 analytic_data_set <- 
   analytic_data_set %>% 
@@ -350,8 +415,7 @@ analytic_data_set <-
     dplyr::vars(starts_with('met_')), 
     funs(case_when(.=="Absent" ~ 0, 
                    .=="Present" ~ 1, 
-                   .=="Unknown" ~ 9))
-  )
+                   .=="Unknown" ~ 9)))
 
 analytic_data_set <- 
   analytic_data_set %>% 
@@ -359,8 +423,7 @@ analytic_data_set <-
     dplyr::vars(one_of('11Q_UBAB','1P_LOAB','17Q_GAIN','mycn')), 
     funs(case_when(.=="Absent" ~ 0, 
                    .=="Present" ~ 1, 
-                   .=="Unknown" ~ 9))
-  )
+                   .=="Unknown" ~ 9)))
 
 
 analytic_data_set$ploidy <- 
@@ -379,7 +442,6 @@ analytic_data_set$scens <-
              "Unknown" ~ 9,
              .default = NA)
 
-    
 analytic_data_set$init_treat <- 
   analytic_data_set$init_treat %>% 
   as.character() %>% 
@@ -413,11 +475,12 @@ output_cols <- c('data_contributor_id', 'pt_id'='honest_broker_subject_id', 'age
                  'pri_adre', 'pri_abdret', 'pri_neck', 'pri_thor', 'pri_pelv', 'pri_oth', 'inss_stage', 'ev_stg', 
                  'mycn', 'ploidy', 'ferritin', 'ldh', 'hist', 'diag', 'grade', 'mki', 
                  'met_bm', 'met_bone', 'met_dln', 'met_liv', 'met_skin', 'met_lung', 'met_cns', 'met_oth', 
-                 'efscens', 'efstime', 'scens', 'stime', 'gender', 'race', 'ethnicity', '11Q_UBAB', '1P_LOAB', '17Q_GAIN', 'init_trial', 'inrg_stage', 
-                 'second_malig_cens', 'second_malig_time', 'smn_morph_icdo', 'smn_morph_sno', 'smn_morph_txt', 'smn_top_icdo', 'smn_top_sno', 'smn_top_txt')
+                 'efscens', 'efstime', 'scens', 'stime', 'gender', 'race', 'ethnicity', '11Q_UBAB', '1P_LOAB', '17Q_GAIN', 
+                 'init_trial', 'inrg_stage', 'second_malig_cens', 'second_malig_time', 'smn_morph_icdo', 
+                 'smn_morph_sno', 'smn_morph_txt', 'smn_top_icdo', 'smn_top_sno', 'smn_top_txt')
 
-analytic_data_set <- analytic_data_set %>% select(output_cols)
-analytic_data_set_labeled <- analytic_data_set_labeled %>% select(output_cols)
+analytic_data_set <- analytic_data_set %>% select(c(output_cols, 'cause_of_death'='cause_of_death_coded', 'rel_site_gen', 'relapse_site_specific'='relapse_site_specific_coded'))
+analytic_data_set_labeled <- analytic_data_set_labeled %>% select(c(output_cols, 'cause_of_death', 'rel_site_gen'='rel_site_gen_labeled','relapse_site_specific'='relapse_site_specific_labeled'))
 
 ##################################################################
 # OUTPUT ANALYTIC DATA SET AS CSV FILE

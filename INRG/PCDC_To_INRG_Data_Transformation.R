@@ -458,8 +458,8 @@ analytic_data_set$init_treat <-
 analytic_data_set$efscens <- 
   analytic_data_set$efscens %>% 
   as.character() %>% 
-  case_match("Subject has had one or more events" ~ 0, 
-             "Subject is censored (i.e. has had no event(s))" ~ 1, 
+  case_match("Subject is censored (i.e. has had no event(s))" ~ 0, 
+             "Subject has had one or more events" ~ 1, 
              "Unknown" ~ 9,
              .default = NA)
     
@@ -485,8 +485,8 @@ analytic_data_set_labeled <- analytic_data_set_labeled %>% select(c(output_cols,
 ##################################################################
 # OUTPUT ANALYTIC DATA SET AS CSV FILE
 ##################################################################
-write_csv(analytic_data_set, file = paste(dest_dir, dest_file_name, sep = ''), na='')
-write_csv(analytic_data_set_labeled, file = paste(dest_dir, dest_file_name_labeled, sep = ''), na='')
+write_csv(analytic_data_set, file = paste(dest_dir, dest_file_name, sep = ''), na='NULL')
+write_csv(analytic_data_set_labeled, file = paste(dest_dir, dest_file_name_labeled, sep = ''), na='NULL')
 
 ##################################################################
 # CLEANUP ENVIRONMENT

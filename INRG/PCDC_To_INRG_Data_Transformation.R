@@ -321,6 +321,7 @@ analytic_data_set$race <-
              "American Indian or Alaskan Native" ~ 3,
              "Asian" ~ 4,
              "Native Hawaiian or Other Pacific Islander" ~ 5,
+             "Multiracial" ~ 6,
              "Not reported" ~ 98,
              "Unknown" ~ 99,
              .default = NA)

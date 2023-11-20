@@ -318,7 +318,7 @@ analytic_data_set$race <-
   as.character() %>% 
   case_match("White" ~ 1, 
              "Black or African American" ~ 2,
-             "American Indian or Alaskan Native" ~ 3,
+             "American Indian or Alaska Native" ~ 3,
              "Asian" ~ 4,
              "Native Hawaiian or Other Pacific Islander" ~ 5,
              "Multiracial" ~ 6,

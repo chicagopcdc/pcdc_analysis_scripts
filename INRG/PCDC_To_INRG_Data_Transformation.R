@@ -208,11 +208,11 @@ df_rel_site_gen <- left_join(df_rel_site_gen, df_rel_site_unknown,by=c('submitte
 df_rel_site_gen <- df_rel_site_gen %>% mutate(rel_site_gen = NA, rel_site_gen_labeled = NA)
 
 df_rel_site_gen <- df_rel_site_gen %>% mutate(rel_site_gen = rel_site_gen %>% 
-                                    replace(rel_site_primary=='Yes' & rel_site_metastatic=='Yes', 3) %>%
-                                    replace(rel_site_primary=='Yes' & is.na(rel_site_metastatic), 1) %>%
-                                    replace(rel_site_metastatic=='Yes' & is.na(rel_site_primary), 2) %>%
-                                    replace(rel_site_unknown=='Yes', 9)
-                            )
+                                                replace(rel_site_primary=='Yes' & rel_site_metastatic=='Yes', 3) %>%
+                                                replace(rel_site_primary=='Yes' & is.na(rel_site_metastatic), 1) %>%
+                                                replace(rel_site_metastatic=='Yes' & is.na(rel_site_primary), 2) %>%
+                                                replace(rel_site_unknown=='Yes', 9)
+)
 
 df_rel_site_gen <- df_rel_site_gen %>% mutate(rel_site_gen_labeled = rel_site_gen_labeled %>% 
                                                 replace(rel_site_primary=='Yes' & rel_site_metastatic=='Yes', 'Primary site and metastatic site(s)') %>%
@@ -225,15 +225,15 @@ df_rel_site_gen <- df_rel_site_gen %>% select('subjects.submitter_id'='submitter
 
 df_rel_site_specific <- df_rel_site_all %>% mutate(relapse_site_specific_coded = NA, relapse_site_specific_labeled=NA)
 df_rel_site_specific <- df_rel_site_specific %>% mutate(relapse_site_specific_coded = (relapse_site_specific_coded %>% 
-                                    replace(tumor_classification=='Primary',1) %>%
-                                    replace(tumor_site=='Bone',2) %>%
-                                    replace(tumor_site=='Bone Marrow',3) %>%
-                                    replace(tumor_site=='Liver',4) %>%
-                                    replace(tumor_site=='Lymph Nodes',5) %>%
-                                    replace(tumor_site=='Lung',6) %>%
-                                    replace(tumor_site=='Other',7) %>%
-                                    replace(tumor_site=='Central Nervous System',8) %>%
-                                    replace(tumor_site=='Unknown',9)))
+                                                                                         replace(tumor_classification=='Primary',1) %>%
+                                                                                         replace(tumor_site=='Bone',2) %>%
+                                                                                         replace(tumor_site=='Bone Marrow',3) %>%
+                                                                                         replace(tumor_site=='Liver',4) %>%
+                                                                                         replace(tumor_site=='Lymph Nodes',5) %>%
+                                                                                         replace(tumor_site=='Lung',6) %>%
+                                                                                         replace(tumor_site=='Other',7) %>%
+                                                                                         replace(tumor_site=='Central Nervous System',8) %>%
+                                                                                         replace(tumor_site=='Unknown',9)))
 
 df_rel_site_specific <- df_rel_site_specific %>% mutate(relapse_site_specific_labeled = ifelse(tumor_classification=='Primary','Primary Site', as.character(tumor_site)))
 
@@ -406,25 +406,36 @@ analytic_data_set <-
   analytic_data_set %>% 
   mutate_at(
     dplyr::vars(starts_with('pri_')), 
-    funs(case_when(.=="Absent" ~ 0, 
-                   .=="Present" ~ 1, 
-                   .=="Unknown" ~ 9)))
+    list(
+      ~ case_when(.=="Absent" ~ 0, 
+                  .=="Present" ~ 1, 
+                  .=="Unknown" ~ 9)
+    )
+  )
+
 
 analytic_data_set <- 
   analytic_data_set %>% 
   mutate_at(
     dplyr::vars(starts_with('met_')), 
-    funs(case_when(.=="Absent" ~ 0, 
-                   .=="Present" ~ 1, 
-                   .=="Unknown" ~ 9)))
+    list(
+      ~ case_when(.=="Absent" ~ 0, 
+                  .=="Present" ~ 1, 
+                  .=="Unknown" ~ 9)
+    )
+  )
 
 analytic_data_set <- 
   analytic_data_set %>% 
   mutate_at(
-    dplyr::vars(one_of('11Q_UBAB','1P_LOAB','17Q_GAIN','mycn')), 
-    funs(case_when(.=="Absent" ~ 0, 
-                   .=="Present" ~ 1, 
-                   .=="Unknown" ~ 9)))
+    dplyr::vars(one_of('11Q_UBAB', '1P_LOAB', '17Q_GAIN', 'mycn')), 
+    list(
+      ~ case_when(.=="Absent" ~ 0, 
+                  .=="Present" ~ 1, 
+                  .=="Unknown" ~ 9)
+    )
+  )
+
 
 
 analytic_data_set$ploidy <- 
@@ -434,7 +445,7 @@ analytic_data_set$ploidy <-
              "DNA Index > 1 (Hyperdiploid)" ~ 0, 
              "Unknown" ~ 9,
              .default = NA)
-    
+
 analytic_data_set$scens <- 
   analytic_data_set$scens %>% 
   as.character() %>% 
@@ -463,7 +474,7 @@ analytic_data_set$efscens <-
              "Subject has had one or more events" ~ 1, 
              "Unknown" ~ 9,
              .default = NA)
-    
+
 analytic_data_set$second_malig_cens <- 
   analytic_data_set$second_malig_cens %>% 
   as.character() %>% 
@@ -480,7 +491,9 @@ output_cols <- c('data_contributor_id', 'pt_id'='honest_broker_subject_id', 'age
                  'init_trial', 'inrg_stage', 'second_malig_cens', 'second_malig_time', 'smn_morph_icdo', 
                  'smn_morph_sno', 'smn_morph_txt', 'smn_top_icdo', 'smn_top_sno', 'smn_top_txt')
 
-analytic_data_set <- analytic_data_set %>% select(c(output_cols, 'cause_of_death'='cause_of_death_coded', 'rel_site_gen', 'relapse_site_specific'='relapse_site_specific_coded'))
+analytic_data_set <- 
+  analytic_data_set %>% 
+  select(c(all_of(output_cols), 'cause_of_death'='cause_of_death_coded', 'rel_site_gen', 'relapse_site_specific'='relapse_site_specific_coded'))
 analytic_data_set_labeled <- analytic_data_set_labeled %>% select(c(output_cols, 'cause_of_death', 'rel_site_gen'='rel_site_gen_labeled','relapse_site_specific'='relapse_site_specific_labeled'))
 
 ##################################################################

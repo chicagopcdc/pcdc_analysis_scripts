@@ -15,9 +15,12 @@ invisible(lapply(packages, library, character.only = TRUE))
 
 ##################################################################
 # SET SOURCE AND DESTINATION FOLDERS
+#     SET analytic_scripts_repo_dir to the directory where the pcdc_analysis_scripts repository resides (e.g., '/Users/jdoe/src/pcdc_analysis_scripts')
 #     SET src_dir to the source directory with PCDC-supplied tsvs (e.g., '/Users/jdoe/Downloads/export_2023-09-19T15_45_33/tsvs/')
 #     SET dst_dir to the destination directory where you would like the analytic file to be written (e.g., '/Users/jdoe/Downloads/export_2023-09-19T15_45_33/analysis/)
 ##################################################################
+analytic_scripts_repo_dir <- ''    #!!!CHANGE THIS
+setwd(paste(analytic_scripts_repo_dir, 'INRG', sep=''))
 src_dir <- ''                    #!!!CHANGE THIS
 dest_dir <- ''                   #!!!CHANGE THIS
 dest_file_name <- paste('INRG_analytical_file_codes.csv')
@@ -502,6 +505,7 @@ analytic_data_set_labeled <- analytic_data_set_labeled %>% select(c(output_cols,
 write_csv(analytic_data_set, file = paste(dest_dir, dest_file_name, sep = ''), na='NULL')
 write_csv(analytic_data_set_labeled, file = paste(dest_dir, dest_file_name_labeled, sep = ''), na='NULL')
 
+source('./INRGDB_DataQualityChecks_DataRequests.r')
 ##################################################################
 # CLEANUP ENVIRONMENT
 ##################################################################

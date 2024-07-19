@@ -1,6 +1,9 @@
 # INRG scripts
 Repository of scripts to transform PCDC raw data into INRG-specific output
 
+#### Setup the environment
+- If you don't have R installed on your machine you can install from [here](https://posit.co/download/rstudio-desktop/)
+
 #### PCDC_To_INRG_Data_Transformation.R
 This script takes as input PCDC tsv files from the PCDC Data Portal and produces as output 2 csv files
 

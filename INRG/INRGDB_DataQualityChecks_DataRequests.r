@@ -19,7 +19,7 @@ invisible(lapply(packages, library, character.only = TRUE))
 inFile_dir <- dest_dir
 inFile_name <- dest_file_name
 
-currentDataSet <- read.csv(paste(inFile_dir, inFile_name, sep = ''))
+currentDataSet <- read.csv(paste(inFile_dir, inFile_name, sep = ''),na.strings = c('NULL'))
 
 ##################################################################
 ##  SETUP OUTPUT TO XLSX

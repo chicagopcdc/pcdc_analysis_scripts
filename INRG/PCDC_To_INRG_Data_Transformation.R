@@ -494,10 +494,15 @@ output_cols <- c('data_contributor_id', 'pt_id'='honest_broker_subject_id', 'age
                  'init_trial', 'inrg_stage', 'second_malig_cens', 'second_malig_time', 'smn_morph_icdo', 
                  'smn_morph_sno', 'smn_morph_txt', 'smn_top_icdo', 'smn_top_sno', 'smn_top_txt')
 
+output_cols_missing <- output_cols[!(output_cols %in% names(analytic_data_set))]
+
 analytic_data_set <- 
   analytic_data_set %>% 
-  select(c(all_of(output_cols), 'cause_of_death'='cause_of_death_coded', 'rel_site_gen', 'relapse_site_specific'='relapse_site_specific_coded'))
-analytic_data_set_labeled <- analytic_data_set_labeled %>% select(c(output_cols, 'cause_of_death', 'rel_site_gen'='rel_site_gen_labeled','relapse_site_specific'='relapse_site_specific_labeled'))
+  select(c(all_of(output_cols[!(output_cols %in% output_cols_missing)]), 'cause_of_death'='cause_of_death_coded', 'rel_site_gen', 'relapse_site_specific'='relapse_site_specific_coded'))
+analytic_data_set_labeled <- analytic_data_set_labeled %>% select(c(output_cols[!(output_cols %in% output_cols_missing)], 'cause_of_death', 'rel_site_gen'='rel_site_gen_labeled','relapse_site_specific'='relapse_site_specific_labeled'))
+
+analytic_data_set[,output_cols_missing] <- NA
+analytic_data_set_labeled[,output_cols_missing] <- NA
 
 ##################################################################
 # OUTPUT ANALYTIC DATA SET AS CSV FILE

@@ -19,10 +19,25 @@ invisible(lapply(packages, library, character.only = TRUE))
 #     SET src_dir to the source directory with PCDC-supplied tsvs (e.g., '/Users/jdoe/Downloads/export_2023-09-19T15_45_33/tsvs/')
 #     SET dst_dir to the destination directory where you would like the analytic file to be written (e.g., '/Users/jdoe/Downloads/export_2023-09-19T15_45_33/analysis/)
 ##################################################################
-analytic_scripts_repo_dir <- ''    #!!!CHANGE THIS
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) < 3) {
+  # stop("3 arguments are requested:\nSET analytic_scripts_repo_dir to the directory where the pcdc_analysis_scripts repository resides (e.g., '/Users/jdoe/src/pcdc_analysis_scripts')\nSET src_dir to the source directory with PCDC-supplied tsvs (e.g., '/Users/jdoe/Downloads/export_2023-09-19T15_45_33/tsvs/')\nSET dst_dir to the destination directory where you would like the analytic file to be written (e.g., '/Users/jdoe/Downloads/export_2023-09-19T15_45_33/analysis/)", call.=FALSE)
+  "3 arguments are requested:\nSET analytic_scripts_repo_dir to the directory where the pcdc_analysis_scripts repository resides (e.g., '/Users/jdoe/src/pcdc_analysis_scripts')\nSET src_dir to the source directory with PCDC-supplied tsvs (e.g., '/Users/jdoe/Downloads/export_2023-09-19T15_45_33/tsvs/')\nSET dst_dir to the destination directory where you would like the analytic file to be written (e.g., '/Users/jdoe/Downloads/export_2023-09-19T15_45_33/analysis/)\n"
+  "DEFAULTING to ''"
+  analytic_scripts_repo_dir_param <- ''   #!!!CHANGE THIS
+  src_dir_param <- ''                     #!!!CHANGE THIS
+  dest_dir_param <- ''                    #!!!CHANGE THIS
+} else {
+  analytic_scripts_repo_dir_param <- args[1]
+  src_dir_param <- args[2]
+  dest_dir_param <- args[3]
+} 
+
+
+analytic_scripts_repo_dir <- analytic_scripts_repo_dir_param    
 setwd(paste(analytic_scripts_repo_dir, 'INRG', sep=''))
-src_dir <- ''                    #!!!CHANGE THIS
-dest_dir <- ''                   #!!!CHANGE THIS
+src_dir <- src_dir_param                    
+dest_dir <- dest_dir_param                   
 dest_file_name <- paste('INRG_analytical_file_codes.csv')
 dest_file_name_labeled <- paste('INRG_analytical_file_labels.csv')
 

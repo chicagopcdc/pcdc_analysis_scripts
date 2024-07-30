@@ -1,6 +1,9 @@
 # INRG scripts
 Repository of scripts to transform PCDC raw data into INRG-specific output
 
+#### Setup the environment
+- If you don't have R installed on your machine you can install from [here](https://posit.co/download/rstudio-desktop/)
+
 #### PCDC_To_INRG_Data_Transformation.R
 This script takes as input PCDC tsv files from the PCDC Data Portal and produces as output 2 csv files
 
@@ -11,7 +14,7 @@ This script takes as input PCDC tsv files from the PCDC Data Portal and produces
 
 In order to run this script, there are 3 variables that must be set 
 
-- SET `analytic_scripts_repo_dir` to the directory where the pcdc_analysis_scripts repository resides (e.g., '/Users/jdoe/src/pcdc_analysis_scripts')
+- SET `analytic_scripts_repo_dir` to the directory where the pcdc_analysis_scripts repository resides (e.g., '/Users/jdoe/src/pcdc_analysis_scripts/')
 - SET `src_dir` to the source directory with PCDC-supplied tsvs (e.g., '/Users/jdoe/Downloads/export_2023-09-19T15_45_33/tsvs/')
 - SET `dst_dir` to the destination directory where you would like the analytic file to be written (e.g., '/Users/jdoe/Downloads/export_2023-09-19T15_45_33/analysis/)
 

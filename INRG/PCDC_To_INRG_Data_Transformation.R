@@ -273,7 +273,7 @@ pvt_molecular_analysis <- pvt_molecular_analysis %>% rename(any_of(molecular_ana
 study_cols_to_rename <- c("init_trial" = "study_id")
 pvt_study <- pvt_study %>% rename(any_of(study_cols_to_rename))
 
-site_cols_to_rename <- c("pri_abdret"="Primary_Abdomen", "pri_adre"="Primary_Adrenal Gland", "pri_neck"="Primary_Neck", "pri_thor"="Primary_Other", "pri_pelv"="Primary_Pelvis", "pri_oth"="Primary_Thorax", "met_bm"="Metastatic_Bone", "met_bone"="Metastatic_Bone Marrow", "met_dln"="Metastatic_Central Nervous System", "met_liv"="Metastatic_Liver", "met_skin"="Metastatic_Lung", "met_lung"="Metastatic_Lymph Nodes", "met_cns"="Metastatic_Other", "met_oth"="Metastatic_Skin")
+site_cols_to_rename <- c("pri_abdret"="Primary_Abdomen", "pri_adre"="Primary_Adrenal Gland", "pri_neck"="Primary_Neck", "pri_thor"="Primary_Other", "pri_pelv"="Primary_Pelvis", "pri_oth"="Primary_Thorax", "met_bm"="Metastatic_Bone Marrow", "met_bone"="Metastatic_Bone", "met_dln"="Metastatic_Lymph Nodes", "met_liv"="Metastatic_Liver", "met_skin"="Metastatic_Skin", "met_lung"="Metastatic_Lung", "met_cns"="Metastatic_Central Nervous System", "met_oth"="Metastatic_Other")
 pvt_sites <- pvt_sites %>% rename(any_of(site_cols_to_rename))
 
 hist_cols_to_rename <- c("diag"="histology","grade"="histology_grade","hist"="histology_inpc")

@@ -18,6 +18,7 @@ In order to run this script, there are 3 variables that must be set
 - SET `src_dir` to the source directory with PCDC-supplied tsvs (e.g., '/Users/jdoe/Downloads/export_2023-09-19T15_45_33/tsvs/')
 - SET `dst_dir` to the destination directory where you would like the analytic file to be written (e.g., '/Users/jdoe/Downloads/export_2023-09-19T15_45_33/analysis/)
 
+Example: `RScript ./PCDC_To_INRG_Data_Transformation.R path/to/pcdc_analysis_scripts/ path/to/source/ path/to/destination/`
 
 This script makes a call to the next script in order to produce QC output.
 

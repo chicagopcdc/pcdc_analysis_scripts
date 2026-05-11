@@ -41,21 +41,27 @@ dest_dir <- dest_dir_param
 dest_file_name <- paste('INRG_analytical_file_codes.csv')
 dest_file_name_labeled <- paste('INRG_analytical_file_labels.csv')
 
+
+##################################################################
+# CREATE EMPTY DATA FRAMES
+##################################################################
+source('./BuildEmptyDataFrames.r')
+
 ##################################################################
 # READ FILES FROM SOURCE DIRECTORY INTO DATA FRAMES
 ##################################################################
-disease_characteristic <- read_delim(paste(src_dir,'disease_characteristic.tsv', sep=''), delim='\t')
-histology <- read_delim(paste(src_dir,'histology.tsv', sep=''), delim='\t')
-lab <- read_delim(paste(src_dir,'lab.tsv', sep=''), delim='\t')
-molecular_analysis <- read_delim(paste(src_dir,'molecular_analysis.tsv', sep=''), delim='\t')
-person <- read_delim(paste(src_dir,'person.tsv', sep=''), delim='\t')
-secondary_malignant_neoplasm <- read_delim(paste(src_dir,'secondary_malignant_neoplasm.tsv', sep=''), delim='\t')
-staging <- read_delim(paste(src_dir,'staging.tsv', sep=''), delim='\t')
-study <- read_delim(paste(src_dir,'study.tsv', sep=''), delim='\t')
-subject <- read_delim(paste(src_dir,'subject.tsv', sep=''), delim='\t')
-survival_characteristic <- read_delim(paste(src_dir,'survival_characteristic.tsv', sep=''), delim='\t')
-timing <- read_delim(paste(src_dir,'timing.tsv', sep=''), delim='\t')
-tumor_assessment <- read_delim(paste(src_dir,'tumor_assessment.tsv', sep=''), delim='\t')
+disease_characteristic <- tryCatch(read_delim(paste(src_dir,'disease_characteristic.tsv', sep=''), delim='\t'), error = function(e) create.empty.disease.characteristic())
+histology <- tryCatch(read_delim(paste(src_dir,'histology.tsv', sep=''), delim='\t'), error = function(e) create.empty.histology())
+lab <- tryCatch(read_delim(paste(src_dir,'lab.tsv', sep=''), delim='\t'), error = function(e) create.empty.lab())
+molecular_analysis <- tryCatch(read_delim(paste(src_dir,'molecular_analysis.tsv', sep=''), delim='\t'), error = function(e) create.empty.molecular.analysis())
+person <- tryCatch(read_delim(paste(src_dir,'person.tsv', sep=''), delim='\t'), error = function(e) create.empty.person())
+secondary_malignant_neoplasm <- tryCatch(read_delim(paste(src_dir,'secondary_malignant_neoplasm.tsv', sep=''), delim='\t'), error = function(e) create.empty.secondary.malignant.neoplasm())
+staging <- tryCatch(read_delim(paste(src_dir,'staging.tsv', sep=''), delim='\t'), error = function(e) create.empty.staging())
+study <- tryCatch(read_delim(paste(src_dir,'study.tsv', sep=''), delim='\t'), error = function(e) create.empty.study())
+subject <- tryCatch(read_delim(paste(src_dir,'subject.tsv', sep=''), delim='\t'), error = function(e) create.empty.subject())
+survival_characteristic <- tryCatch(read_delim(paste(src_dir,'survival_characteristic.tsv', sep=''), delim='\t'), error = function(e) create.empty.survival.characteristic())
+timing <- tryCatch(read_delim(paste(src_dir,'timing.tsv', sep=''), delim='\t'), error = function(e) create.empty.timing())
+tumor_assessment <- tryCatch(read_delim(paste(src_dir,'tumor_assessment.tsv', sep=''), delim='\t'), error = function(e) create.empty.tumor.assessment())
 
 ##################################################################
 # SUBSELECT FIELDS AND CAST VARIABLES TO PROPER TYPES
